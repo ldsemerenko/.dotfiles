@@ -66,6 +66,14 @@ set showmatch
 " Wildmenu
 set wildmode=longest,full
 
+" gVim (win32) only configs
+if has('gui_win32')
+  set clipboard=unnamed
+  set guioptions=
+  set guifont=Consolas:h12:cANSI:qDRAFT
+  set renderoptions=type:directx
+endif
+
 
 "
 " Key mappings
@@ -126,60 +134,61 @@ nnoremap <a-9> 9gt
 
 
 "
-" gVim (win32) only configs. Requires python 2.7
+" Vim Plugins
 "
-if has('gui_win32')
-  set clipboard=unnamed
-  set guioptions=
-  set guifont=Consolas:h12:cANSI:qDRAFT
-  set renderoptions=type:directx
+function! s:handle_gvim(msys2_rootdir)
+  " Proceed only if it's gVim and msys2 is present
+  if !has('gui_win32') || !isdirectory(a:msys2_rootdir) | return | endif
 
-  " Use msys2 configs if does exist
-  if isdirectory('C:\msys64')
-    let $PATH = 'C:\msys64\usr\bin;'.$PATH
-    let &runtimepath = 'C:\msys64\home\'.$USERNAME.'\.vim,'.&runtimepath
-    let s:plug = 'C:\msys64\home\'.$USERNAME.'\.vim\plugged'
-  endif
-endif
+  " For gVim, use msys2 configs if does exist
+  let $PATH           = a:msys2_rootdir . '\usr\bin;' . $PATH
+  let &runtimepath    = a:msys2_rootdir . '\home\' . $USERNAME . '\.vim,' . &runtimepath
+  let s:dein_basedir  = a:msys2_rootdir . '\home\' . $USERNAME . '\.vim\p'
+endfunction
 
+let s:dein_basedir = expand('~/.vim/p')
+call s:handle_gvim('C:\msys64')
+let s:dein_self = expand(s:dein_basedir . '/repos/github.com/Shougo/dein.vim')
+let s:dein_enabled = 0
 
-"
-" List of plugins
-"
-try
-  call plug#begin(exists('s:plug') ? s:plug : '~/.vim/plugged')
+function! s:plugins()
+  " Proceed only when dein.vim exists
+  if !isdirectory(s:dein_basedir) | return | endif
 
-  Plug 'vim-airline/vim-airline'
-  Plug 'vim-airline/vim-airline-themes'
+  let s:dein_enabled = 1
+  let &runtimepath .= ',' . s:dein_self
+
+  if !dein#load_state(s:dein_basedir) | return | endif
+  call dein#begin(s:dein_basedir)
+
+  call dein#add(s:dein_self)
+  call dein#add('vim-airline/vim-airline')
+  call dein#add('vim-airline/vim-airline-themes')
   if !has('win32') && !has('win64') && !has('win32unix')
-    Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': 'yes \| ./install' }
+    call dein#add('junegunn/fzf', { 'build': './install --all', 'merged': 0 })
   endif
-  Plug 'junegunn/goyo.vim'
-  Plug 'junegunn/limelight.vim'
-  Plug 'simnalamburt/vim-mundo'
-  Plug 'tpope/vim-git'
-  Plug 'tpope/vim-fugitive'
-  Plug 'tpope/vim-endwise'
-  Plug 'tpope/vim-sensible'
-  Plug 'tpope/vim-obsession'
-  if v:version >= 703
-    Plug 'mhinz/vim-startify'
-  endif
-  Plug 'godlygeek/tabular'
-  Plug 'vim-utils/vim-interruptless'
-  Plug 'junegunn/gv.vim'
-  if v:version >= 702
-    Plug 'justinmk/vim-dirvish'
-  endif
+  call dein#add('junegunn/goyo.vim')
+  call dein#add('junegunn/limelight.vim')
+  call dein#add('simnalamburt/vim-mundo')
+  call dein#add('tpope/vim-git')
+  call dein#add('tpope/vim-fugitive')
+  call dein#add('tpope/vim-endwise')
+  call dein#add('tpope/vim-sensible')
+  call dein#add('tpope/vim-obsession')
+  call dein#add('mhinz/vim-startify')
+  call dein#add('godlygeek/tabular')
+  call dein#add('vim-utils/vim-interruptless')
+  call dein#add('junegunn/gv.vim')
+  call dein#add('justinmk/vim-dirvish')
 
   " Haskell
-  Plug 'eagletmt/neco-ghc'
-  Plug 'neovimhaskell/haskell-vim'
+  call dein#add('eagletmt/neco-ghc')
+  call dein#add('neovimhaskell/haskell-vim')
 
   " Visual
-  Plug 'nathanaelkane/vim-indent-guides'
-  Plug 'ntpeters/vim-better-whitespace'
-  Plug 'chr4/sslsecure.vim'
+  call dein#add('nathanaelkane/vim-indent-guides')
+  call dein#add('ntpeters/vim-better-whitespace')
+  call dein#add('chr4/sslsecure.vim')
   function! s:is_editorconfig_supported()
     if has('python3')
       return 1
@@ -193,45 +202,40 @@ EOF
     return 0
   endfunction
   if s:is_editorconfig_supported()
-    Plug 'editorconfig/editorconfig-vim'
+    call dein#add('editorconfig/editorconfig-vim')
   endif
-  Plug 'junegunn/seoul256.vim'
+  call dein#add('junegunn/seoul256.vim')
 
   " Syntax
-  Plug 'vim-scripts/applescript.vim'
-  Plug 'vim-scripts/rfc-syntax', { 'for': 'rfc' }
-  Plug 'simnalamburt/k-.vim'
-  Plug 'wlangstroth/vim-racket'
-  Plug 'tfnico/vim-gradle'
-  Plug 'wavded/vim-stylus'
-  Plug 'elixir-lang/vim-elixir'
-  Plug 'idris-hackers/idris-vim'
-  Plug 'Matt-Deacalion/vim-systemd-syntax'
-  Plug 'fatih/vim-go'
-  if v:version >= 701
-    Plug 'sheerun/vim-polyglot'
-  endif
+  call dein#add('vim-scripts/applescript.vim')
+  call dein#add('simnalamburt/k-.vim')
+  call dein#add('wlangstroth/vim-racket')
+  call dein#add('tfnico/vim-gradle')
+  call dein#add('wavded/vim-stylus')
+  call dein#add('elixir-lang/vim-elixir')
+  call dein#add('idris-hackers/idris-vim')
+  call dein#add('Matt-Deacalion/vim-systemd-syntax')
+  call dein#add('fatih/vim-go')
+  call dein#add('sheerun/vim-polyglot')
 
   " Blink
-  if v:version >= 701
-    Plug 'rhysd/clever-f.vim'
-    Plug 'easymotion/vim-easymotion'
-    Plug 'haya14busa/incsearch.vim'
-    Plug 'haya14busa/incsearch-fuzzy.vim'
-    Plug 'haya14busa/incsearch-easymotion.vim'
-  endif
+  call dein#add('rhysd/clever-f.vim')
+  call dein#add('easymotion/vim-easymotion')
+  call dein#add('haya14busa/incsearch.vim')
+  call dein#add('haya14busa/incsearch-fuzzy.vim')
+  call dein#add('haya14busa/incsearch-easymotion.vim')
 
-  call plug#end()
-
-  let s:has_vimplug = 1
-catch /^Vim\%((\a\+)\)\=:E117/
-endtry
+  call dein#end()
+  call dein#save_state()
+  filetype plugin indent on
+endfunction
+call s:plugins()
 
 
 "
 " Configs for plugins
 "
-if exists('s:has_vimplug') && s:has_vimplug
+if s:dein_enabled
   " vim-airline
   let g:airline_powerline_fonts = 1
 
@@ -280,37 +284,38 @@ if exists('s:has_vimplug') && s:has_vimplug
   let g:clever_f_across_no_line = 1
   let g:clever_f_smart_case = 1
 
+  "
   " Configs for incsearch-family plugins
-  if v:version >= 701
-    " incsearch.vim
-    map /  <Plug>(incsearch-forward)
-    map ?  <Plug>(incsearch-backward)
-    map g/ <Plug>(incsearch-stay)
-    let g:incsearch#auto_nohlsearch = 1
-    map n  <Plug>(incsearch-nohl-n)
-    map N  <Plug>(incsearch-nohl-N)
-    map *  <Plug>(incsearch-nohl-*)
-    map #  <Plug>(incsearch-nohl-#)
-    map g* <Plug>(incsearch-nohl-g*)
-    map g# <Plug>(incsearch-nohl-g#)
+  "
 
-    " incsearch-fuzzy.vim
-    map z/ <Plug>(incsearch-fuzzy-/)
-    map z? <Plug>(incsearch-fuzzy-?)
-    map zg/ <Plug>(incsearch-fuzzy-stay)
+  " incsearch.vim
+  map /  <Plug>(incsearch-forward)
+  map ?  <Plug>(incsearch-backward)
+  map g/ <Plug>(incsearch-stay)
+  let g:incsearch#auto_nohlsearch = 1
+  map n  <Plug>(incsearch-nohl-n)
+  map N  <Plug>(incsearch-nohl-N)
+  map *  <Plug>(incsearch-nohl-*)
+  map #  <Plug>(incsearch-nohl-#)
+  map g* <Plug>(incsearch-nohl-g*)
+  map g# <Plug>(incsearch-nohl-g#)
 
-    " incsearch-easymotion.vim
-    function! s:config_easyfuzzymotion(...) abort
-      return extend(copy({
-      \   'converters': [incsearch#config#fuzzy#converter()],
-      \   'modules': [incsearch#config#easymotion#module()],
-      \   'keymap': {"\<CR>": '<Over>(easymotion)'},
-      \   'is_expr': 0,
-      \   'is_stay': 1
-      \ }), get(a:, 1, {}))
-    endfunction
-    noremap <silent><expr> <Space>/ incsearch#go(<SID>config_easyfuzzymotion())
-  endif
+  " incsearch-fuzzy.vim
+  map z/ <Plug>(incsearch-fuzzy-/)
+  map z? <Plug>(incsearch-fuzzy-?)
+  map zg/ <Plug>(incsearch-fuzzy-stay)
+
+  " incsearch-easymotion.vim
+  function! s:config_easyfuzzymotion(...) abort
+    return extend(copy({
+    \   'converters': [incsearch#config#fuzzy#converter()],
+    \   'modules': [incsearch#config#easymotion#module()],
+    \   'keymap': {"\<CR>": '<Over>(easymotion)'},
+    \   'is_expr': 0,
+    \   'is_stay': 1
+    \ }), get(a:, 1, {}))
+  endfunction
+  noremap <silent><expr> <Space>/ incsearch#go(<SID>config_easyfuzzymotion())
 endif
 
 
